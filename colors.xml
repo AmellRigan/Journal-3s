@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_dark">#07030a</color>
+    <color name="crimson">#8b1a2a</color>
+    <color name="crimson_bright">#c0233a</color>
+</resources>

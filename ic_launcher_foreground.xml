@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!--
+        5-pointed star, centre 54,54.
+        Outer radius = 30, inner radius = 12.
+        Vertices calculated at angles -90°, -18°, 54°, 126°, 198° (outer)
+        and midpoints (inner).
+    -->
+    <path
+        android:fillColor="#c0233a"
+        android:pathData="
+          M54.00,24.00
+          L59.66,42.54
+          L79.53,42.54
+          L64.04,53.82
+          L69.71,72.36
+          L54.00,61.09
+          L38.29,72.36
+          L43.96,53.82
+          L28.47,42.54
+          L48.34,42.54
+          Z" />
+
+    <!-- Outer ring, two semicircular arcs forming a full circle r=40 -->
+    <path
+        android:strokeColor="#8b1a2a"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M54,14 A40,40 0 1 1 53.99,14 Z" />
+
+</vector>

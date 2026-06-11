@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#07030a">
+<title>Журнал Героя</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════ */
+:root{
+  --bg:        #07030a;
+  --panel:     #0d070f;
+  --card:      #130912;
+  --card2:     #1a0c18;
+  --c:         #8b1a2a;   /* crimson */
+  --cd:        #5a1020;   /* crimson dim */
+  --cb:        #c0233a;   /* crimson bright */
+  --cg:        #e83050;   /* crimson glow */
+  --rp:        #c87a8a;   /* red pale text */
+  --rd:        #6a3040;   /* red dim */
+  --border:    #250e1c;
+  --borderc:   #4a1424;
+  --text:      #cfa0ad;
+  --textd:     #6a3d4a;
+  --textb:     #eec0c8;
+  --gold:      #b8922a;
+  --goldd:     #6b4f1f;
+  --green:     #2a7a3a;
+  --greenb:    #40b85a;
+  --yellow:    #8a7020;
+  --yellowb:   #d4b030;
+  --blue:      #1a3a7a;
+  --blueb:     #4080d0;
+
+  --nav-h: 58px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;overflow:hidden}
+body{
+  height:100%;
+  font-family:'EB Garamond',serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow:hidden;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+/* ── CANVAS ── */
+#cv{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ── SHELL ── */
+#shell{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;
+  height:100%;
+  height:100dvh;
+}
+
+/* ── HEADER ── */
+#hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px 10px;
+  padding-top:max(12px, env(safe-area-inset-top, 12px));
+  border-bottom:1px solid var(--border);
+  background:rgba(7,3,10,.9);
+  backdrop-filter:blur(8px);
+  flex-shrink:0;
+}
+.hdr-title{
+  font-family:'Cinzel',serif;font-size:15px;
+  letter-spacing:3px;color:var(--cb);
+}
+.hdr-sub{font-size:10px;color:var(--textd);font-style:italic}
+.hdr-chron{
+  font-family:'Cinzel',serif;font-size:9px;
+  letter-spacing:2px;color:var(--rd);
+  border:1px solid var(--borderc);
+  border-radius:2px;padding:5px 10px;
+  cursor:pointer;transition:all .2s;
+  text-transform:uppercase;
+  background:transparent;
+}
+.hdr-chron:active{color:var(--cb);border-color:var(--cb)}
+
+/* ── MAIN ── */
+#main{flex:1;overflow:hidden;position:relative}
+.page{
+  display:none;position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+.page.active{display:block}
+.page::-webkit-scrollbar{width:3px}
+.page::-webkit-scrollbar-thumb{background:var(--borderc);border-radius:2px}
+
+/* ── BOTTOM NAV ── */
+#nav{
+  display:flex;
+  border-top:1px solid var(--border);
+  background:rgba(7,3,10,.95);
+  backdrop-filter:blur(12px);
+  flex-shrink:0;
+  padding-bottom:var(--safe-bottom);
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:3px;padding:10px 4px;
+  cursor:pointer;border:none;background:transparent;
+  color:var(--textd);transition:color .2s;
+  font-family:'Cinzel',serif;
+}
+.nav-btn.active{color:var(--cb)}
+.nav-btn .ni{
+  width:22px;height:22px;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.nav-btn.active .ni::after{
+  content:'';position:absolute;inset:-3px;
+  border-radius:50%;
+  background:rgba(192,35,58,.12);
+}
+.nav-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.nav-btn .nl{font-size:8px;letter-spacing:1.5px;text-transform:uppercase}
+
+/* ── PAGE HEADER ── */
+.ph{
+  padding:16px 16px 12px;
+  border-bottom:1px solid var(--border);
+  background:rgba(13,7,15,.8);
+  position:sticky;top:0;z-index:10;
+  backdrop-filter:blur(6px);
+}
+.ph-row{display:flex;align-items:flex-start;justify-content:space-between}
+.ph-t{font-family:'Cinzel',serif;font-size:16px;letter-spacing:2px;color:var(--cb)}
+.ph-s{font-size:11px;color:var(--textd);font-style:italic;margin-top:2px}
+.ph-action{
+  font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;
+  color:var(--cd);border:1px solid var(--borderc);border-radius:2px;
+  padding:5px 10px;cursor:pointer;transition:all .2s;background:transparent;
+  text-transform:uppercase;white-space:nowrap;
+}
+.ph-action:active{color:var(--cb);border-color:var(--cb)}
+
+.sb{padding:14px 14px 80px}
+
+/* ── CARDS ── */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:3px;padding:13px 14px;margin-bottom:8px;
+  position:relative;transition:border-color .15s;
+}
+.card:active{border-color:var(--borderc)}
+.card-l{
+  position:absolute;left:0;top:0;bottom:0;width:2px;
+  border-radius:3px 0 0 3px;background:var(--cd);
+  transition:background .15s;
+}
+.card:active .card-l,.card.done .card-l{background:var(--cb)}
+
+/* ── RULE ── */
+.rule{height:1px;background:linear-gradient(90deg,transparent,var(--borderc),transparent);margin:14px 0}
+.slabel{
+  font-family:'Cinzel',serif;font-size:9px;
+  letter-spacing:3px;color:var(--textd);
+  text-transform:uppercase;margin-bottom:10px;
+}
+
+/* ── PROGRESS ── */
+.pbar{background:rgba(0,0,0,.5);border-radius:1px;height:3px;overflow:hidden;margin:6px 0}
+.pbar-f{height:100%;border-radius:1px;background:linear-gradient(90deg,var(--cd),var(--cb));position:relative}
+.pbar-f::after{content:'';position:absolute;right:0;top:0;bottom:0;width:2px;background:var(--cg);box-shadow:0 0 4px var(--cg)}
+
+/* ── BTN ── */
+.btn{
+  width:100%;border:1px solid var(--borderc);border-radius:2px;
+  padding:10px;font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:2px;color:var(--c);cursor:pointer;
+  background:transparent;text-transform:uppercase;
+  transition:all .2s;margin-top:6px;
+}
+.btn:active{color:var(--cb);border-color:var(--cb);background:rgba(139,26,42,.1)}
+.btn-sm{
+  border:1px solid var(--borderc);border-radius:2px;
+  padding:4px 10px;font-family:'Cinzel',serif;font-size:9px;
+  letter-spacing:1px;color:var(--rd);cursor:pointer;
+  background:transparent;text-transform:uppercase;transition:all .2s;
+}
+.btn-sm:active{color:var(--cb);border-color:var(--cb)}
+
+/* ── CHIP ── */
+.chip{
+  background:rgba(0,0,0,.3);border:1px solid var(--border);
+  border-radius:2px;padding:3px 9px;
+  font-size:11px;font-family:'Cinzel',serif;letter-spacing:1px;color:var(--textd);
+  display:inline-block;
+}
+.chip b{color:var(--rp)}
+
+/* ── STAT GRID ── */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.sb-box{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:3px;padding:13px 10px;text-align:center;
+}
+.sb-v{font-family:'Cinzel',serif;font-size:24px;color:var(--cb);line-height:1;margin-bottom:3px}
+.sb-l{font-size:10px;color:var(--textd);font-style:italic}
+
+/* ── INPUT ── */
+.field{
+  background:var(--card);border:1px solid var(--border);border-radius:2px;
+  padding:9px 12px;width:100%;color:var(--text);
+  font-family:'EB Garamond',serif;font-size:14px;
+  outline:none;transition:border-color .2s;margin-bottom:8px;
+  -webkit-appearance:none;
+}
+.field:focus{border-color:var(--borderc)}
+.field::placeholder{color:var(--textd)}
+textarea.field{resize:none;min-height:90px;line-height:1.7}
+select.field{cursor:pointer;color:var(--text)}
+select.field option{background:var(--card);color:var(--text)}
+
+/* ═══════════════════════════════════
+   GOALS — four tabs
+═══════════════════════════════════ */
+.goals-tabs{
+  display:flex;border-bottom:1px solid var(--border);
+  background:rgba(13,7,15,.9);
+  position:sticky;top:56px;z-index:9;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.goals-tabs::-webkit-scrollbar{display:none}
+.gtab{
+  flex:0 0 auto;
+  padding:10px 14px;
+  font-family:'Cinzel',serif;font-size:9px;
+  letter-spacing:2px;color:var(--textd);
+  cursor:pointer;border-bottom:2px solid transparent;
+  text-transform:uppercase;white-space:nowrap;
+  transition:all .2s;
+}
+.gtab.active{color:var(--cb);border-bottom-color:var(--cb)}
+
+.gtab-panel{display:none}
+.gtab-panel.active{display:block}
+
+/* ── TASK CARD (daily / todo) ── */
+.task-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:3px;padding:12px 14px;margin-bottom:7px;
+  display:flex;gap:12px;align-items:flex-start;
+  transition:all .2s;
+}
+.task-card.done{opacity:.55}
+.task-card.done .task-title{text-decoration:line-through;color:var(--textd)}
+
+.task-check{
+  width:20px;height:20px;border-radius:2px;
+  border:1px solid var(--borderc);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;margin-top:1px;
+  color:transparent;font-size:11px;
+}
+.task-check.checked{background:var(--cd);border-color:var(--cb);color:var(--cb)}
+
+.task-body{flex:1;min-width:0}
+.task-title{font-size:14px;color:var(--textb);margin-bottom:3px;line-height:1.3}
+.task-note{font-size:11px;color:var(--textd);font-style:italic;margin-bottom:6px;line-height:1.4}
+
+.task-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.tag{
+  font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;
+  padding:2px 7px;border-radius:1px;text-transform:uppercase;
+}
+.tag-red{background:rgba(139,26,42,.2);color:var(--c);border:1px solid var(--cd)}
+.tag-gold{background:rgba(184,146,42,.15);color:var(--gold);border:1px solid var(--goldd)}
+.tag-green{background:rgba(42,122,58,.15);color:var(--greenb);border:1px solid var(--green)}
+.tag-blue{background:rgba(26,58,122,.2);color:var(--blueb);border:1px solid var(--blue)}
+.tag-grey{background:rgba(0,0,0,.3);color:var(--textd);border:1px solid var(--border)}
+
+.task-streak{
+  display:flex;align-items:center;gap:4px;
+  font-family:'Cinzel',serif;font-size:10px;color:var(--rd);
+  margin-left:auto;
+}
+.streak-pip{
+  display:flex;gap:2px;
+}
+.pip{width:5px;height:5px;border-radius:50%;background:var(--border)}
+.pip.lit{background:var(--cb);box-shadow:0 0 4px var(--cb)}
+
+/* ── XP badge ── */
+.xp-badge{
+  font-family:'Cinzel',serif;font-size:9px;
+  color:var(--goldd);letter-spacing:1px;
+}
+
+/* ── DIFFICULTY ── */
+.diff{display:flex;gap:1px}
+.diff-pip{width:4px;height:10px;border-radius:1px;background:var(--border)}
+.diff-pip.lit-e{background:var(--greenb)}
+.diff-pip.lit-m{background:var(--yellowb)}
+.diff-pip.lit-h{background:var(--cb)}
+
+/* ── HABIT CARD ── */
+.habit-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:3px;padding:12px 14px;margin-bottom:7px;
+}
+.habit-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.habit-title{font-size:14px;color:var(--textb);line-height:1.3}
+.habit-note{font-size:11px;color:var(--textd);font-style:italic;margin-top:2px}
+.habit-controls{display:flex;gap:6px;flex-shrink:0}
+.habit-btn{
+  width:30px;height:30px;border-radius:2px;
+  border:1px solid var(--borderc);background:transparent;
+  font-family:'Cinzel',serif;font-size:14px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--textd);transition:all .15s;
+}
+.habit-btn.plus:active{background:rgba(42,122,58,.2);border-color:var(--greenb);color:var(--greenb)}
+.habit-btn.minus:active{background:rgba(139,26,42,.2);border-color:var(--cb);color:var(--cb)}
+.habit-bottom{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.habit-score{
+  height:5px;flex:1;min-width:60px;
+  background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden;
+  border:1px solid var(--border);
+}
+.habit-score-fill{height:100%;border-radius:2px;transition:width .4s}
+.habit-score-fill.pos{background:linear-gradient(90deg,var(--green),var(--greenb))}
+.habit-score-fill.neg{background:linear-gradient(90deg,var(--cd),var(--c));margin-left:auto}
+
+/* ── LONG-TERM CARD ── */
+.lt-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:3px;padding:13px 14px;margin-bottom:8px;
+}
+.lt-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.lt-title{font-family:'Cinzel',serif;font-size:13px;color:var(--textb);letter-spacing:.5px}
+.lt-pct{font-family:'Cinzel',serif;font-size:13px;color:var(--cb)}
+.lt-note{font-size:11px;color:var(--textd);font-style:italic;margin-bottom:8px;line-height:1.4}
+.lt-steps{margin-top:8px}
+.lt-step{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 0;border-bottom:1px solid var(--border);
+  font-size:12px;color:var(--textd);
+}
+.lt-step:last-child{border-bottom:none}
+.lt-step.done-step{color:var(--textd);text-decoration:line-through}
+.step-check{
+  width:14px;height:14px;border-radius:1px;
+  border:1px solid var(--borderc);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:9px;color:transparent;transition:all .2s;
+}
+.step-check.checked{background:var(--cd);border-color:var(--cb);color:var(--cb)}
+
+/* ── MODAL ── */
+.modal-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.7);z-index:200;
+  align-items:flex-end;
+}
+.modal-bg.show{display:flex}
+.modal{
+  background:var(--panel);border-top:1px solid var(--borderc);
+  border-radius:12px 12px 0 0;
+  padding:20px 16px;
+  padding-bottom:max(20px, var(--safe-bottom));
+  width:100%;max-height:85vh;overflow-y:auto;
+  animation:slideUp .25s ease;
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-title{
+  font-family:'Cinzel',serif;font-size:14px;
+  letter-spacing:2px;color:var(--cb);
+  margin-bottom:16px;text-align:center;
+  text-transform:uppercase;
+}
+.modal-close{
+  position:absolute;right:16px;top:16px;
+  background:none;border:none;color:var(--textd);
+  font-size:18px;cursor:pointer;
+}
+.field-label{
+  font-family:'Cinzel',serif;font-size:9px;
+  letter-spacing:2px;color:var(--textd);
+  text-transform:uppercase;margin-bottom:5px;display:block;
+}
+.form-group{margin-bottom:12px}
+.diff-select{display:flex;gap:6px;margin-bottom:8px}
+.diff-opt{
+  flex:1;padding:8px;text-align:center;
+  border:1px solid var(--border);border-radius:2px;
+  font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;
+  color:var(--textd);cursor:pointer;transition:all .2s;
+  text-transform:uppercase;
+}
+.diff-opt.sel-e{border-color:var(--greenb);color:var(--greenb);background:rgba(42,122,58,.1)}
+.diff-opt.sel-m{border-color:var(--yellowb);color:var(--yellowb);background:rgba(138,112,32,.1)}
+.diff-opt.sel-h{border-color:var(--cb);color:var(--cb);background:rgba(139,26,42,.1)}
+.type-select{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.type-opt{
+  flex:1;min-width:60px;padding:8px;text-align:center;
+  border:1px solid var(--border);border-radius:2px;
+  font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;
+  color:var(--textd);cursor:pointer;transition:all .2s;text-transform:uppercase;
+}
+.type-opt.active{border-color:var(--cb);color:var(--cb);background:rgba(139,26,42,.1)}
+.freq-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.freq-btn{
+  padding:5px 10px;border:1px solid var(--border);border-radius:2px;
+  font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;
+  color:var(--textd);cursor:pointer;transition:all .2s;text-transform:uppercase;
+}
+.freq-btn.active{border-color:var(--cb);color:var(--cb);background:rgba(139,26,42,.1)}
+
+/* ── CHRONICLE PANEL ── */
+.chron-panel{
+  position:fixed;right:-100%;top:0;bottom:0;width:min(300px,90vw);
+  background:rgba(10,5,14,.97);border-left:1px solid var(--borderc);
+  z-index:150;transition:right .28s ease;
+  display:flex;flex-direction:column;
+  backdrop-filter:blur(12px);
+}
+.chron-panel.open{right:0}
+.chron-hdr{
+  padding:14px 14px;
+  padding-top:max(14px,env(safe-area-inset-top,14px));
+  border-bottom:1px solid var(--borderc);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.chron-title{font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;color:var(--cb);text-transform:uppercase}
+.chron-close{background:none;border:none;color:var(--textd);font-size:18px;cursor:pointer}
+.chron-body{flex:1;overflow-y:auto;padding:12px}
+.chron-body::-webkit-scrollbar{width:3px}
+.chron-body::-webkit-scrollbar-thumb{background:var(--borderc)}
+.chron-item{padding:9px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--textd);font-style:italic;line-height:1.6}
+.chron-item::before{content:'— ';color:var(--cd)}
+.chron-dt{font-size:9px;color:var(--border);font-family:'Cinzel',serif;letter-spacing:2px;margin-top:3px;font-style:normal;text-transform:uppercase}
+
+/* overlay */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+.overlay.show{display:block}
+
+/* ══ TIME PAGE ══ */
+.timer-block{
+  background:var(--card2);border:1px solid var(--borderc);border-radius:3px;
+  padding:14px;margin-bottom:12px;
+  display:none;align-items:center;gap:12px;
+}
+.timer-block.on{display:flex}
+.t-info{flex:1}
+.t-cat{font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--textd);text-transform:uppercase;margin-bottom:3px}
+.t-task{font-size:14px;color:var(--textb);margin-bottom:2px}
+.t-el{font-family:'Cinzel',serif;font-size:20px;color:var(--cb);letter-spacing:2px}
+.t-stop{
+  border:1px solid var(--cb);background:var(--cd);border-radius:2px;
+  padding:8px 12px;font-family:'Cinzel',serif;font-size:9px;
+  letter-spacing:2px;color:var(--textb);cursor:pointer;white-space:nowrap;text-transform:uppercase;
+}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px}
+.cat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:3px;
+  padding:11px 12px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+}
+.cat-card:active,.cat-card.running{border-color:var(--borderc);background:var(--card2)}
+.cat-n{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--textd);text-transform:uppercase;margin-bottom:5px}
+.cat-card.running .cat-n{color:var(--cb)}
+.cat-v{font-size:16px;color:var(--textb);line-height:1;margin-bottom:1px}
+.cat-w{font-size:10px;color:var(--textd);font-style:italic;margin-bottom:6px}
+.cat-pb{height:2px;background:rgba(0,0,0,.4);border-radius:1px;overflow:hidden}
+.cat-pb-f{height:100%;border-radius:1px;background:linear-gradient(90deg,var(--cd),var(--cb));transition:width .5s}
+
+.day-total{background:var(--card2);border:1px solid var(--borderc);border-radius:3px;padding:13px 14px;margin-bottom:12px}
+.dt-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.dt-l{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--textd);text-transform:uppercase}
+.dt-v{font-family:'Cinzel',serif;font-size:13px;color:var(--cb);letter-spacing:1px}
+.week-cols{display:flex;gap:4px;align-items:flex-end;height:50px;margin-top:8px}
+.wc{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.wc-bw{flex:1;width:100%;background:rgba(0,0,0,.3);border-radius:1px;border:1px solid var(--border);position:relative;overflow:hidden;min-height:36px}
+.wc-bf{position:absolute;bottom:0;left:0;right:0;border-radius:1px;background:linear-gradient(to top,var(--cd),var(--c));transition:height .5s}
+.wc-bf.today{background:linear-gradient(to top,var(--c),var(--cb));box-shadow:0 0 6px rgba(192,35,58,.4)}
+.wc-l{font-family:'Cinzel',serif;font-size:7px;letter-spacing:1px;color:var(--textd)}
+
+.cat-sel{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.csel-btn{
+  background:var(--card);border:1px solid var(--border);border-radius:2px;
+  padding:5px 11px;font-family:'Cinzel',serif;font-size:9px;
+  letter-spacing:2px;color:var(--textd);cursor:pointer;transition:all .2s;text-transform:uppercase;
+}
+.csel-btn.active,.csel-btn:active{border-color:var(--cb);color:var(--cb);background:rgba(139,26,42,.08)}
+
+.entry-row{
+  background:var(--card);border:1px solid var(--border);border-radius:3px;
+  padding:9px 12px;margin-bottom:5px;
+  display:flex;align-items:center;gap:10px;
+}
+.er-accent{width:2px;align-self:stretch;background:var(--cd);border-radius:2px;flex-shrink:0}
+.er-info{flex:1;min-width:0}
+.er-task{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.er-cat{font-size:10px;color:var(--textd);font-style:italic}
+.er-time{font-family:'Cinzel',serif;font-size:11px;color:var(--rp);letter-spacing:1px;flex-shrink:0}
+
+/* ══ TRAINING ══ */
+.streak-b{
+  background:var(--card2);border:1px solid var(--borderc);border-radius:3px;
+  padding:14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+}
+.stk-l{font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--textd);text-transform:uppercase;margin-bottom:3px}
+.stk-t{font-size:12px;color:var(--text);font-style:italic}
+.stk-n{font-family:'Cinzel',serif;font-size:34px;color:var(--cb);letter-spacing:2px;line-height:1}
+.stk-d{font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:var(--textd)}
+
+.w-card{
+  background:var(--card);border:1px solid var(--border);border-radius:3px;
+  padding:12px 14px;margin-bottom:7px;display:flex;gap:12px;align-items:flex-start;
+}
+.w-body{flex:1}
+.w-name{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.5px;color:var(--textb);margin-bottom:2px}
+.w-muscles{font-size:11px;color:var(--textd);font-style:italic;margin-bottom:7px}
+.w-chips{display:flex;flex-wrap:wrap;gap:5px}
+.w-done{
+  width:20px;height:20px;border-radius:2px;border:1px solid var(--borderc);
+  flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:transparent;transition:all .2s;
+}
+.w-done.checked{background:var(--cd);border-color:var(--cb);color:var(--cb)}
+
+.muscle-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.muscle-n{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--textd);text-transform:uppercase;width:70px;flex-shrink:0}
+.muscle-bg{flex:1;height:5px;background:rgba(0,0,0,.4);border-radius:1px;border:1px solid var(--border);overflow:hidden}
+.muscle-f{height:100%;border-radius:1px;background:linear-gradient(90deg,var(--cd),var(--cb))}
+.muscle-v{font-size:10px;color:var(--textd);width:28px;text-align:right;flex-shrink:0}
+
+/* ══ DIARY ══ */
+.j-page{
+  background:linear-gradient(135deg,#130910,#0e0710);
+  border:1px solid var(--borderc);border-radius:3px;
+  padding:18px 18px 18px 26px;margin-bottom:12px;position:relative;
+}
+.j-page::before{content:'';position:absolute;left:30px;top:0;bottom:0;width:1px;background:rgba(90,16,32,.2)}
+.j-date{font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--rd);text-transform:uppercase;margin-bottom:10px}
+.j-ta{width:100%;background:transparent;border:none;outline:none;font-family:'EB Garamond',serif;font-size:15px;color:var(--text);font-style:italic;line-height:1.85;resize:none;min-height:100px}
+.j-ta::placeholder{color:var(--textd)}
+
+.mood-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.mood-btn{
+  background:var(--card);border:1px solid var(--border);border-radius:2px;
+  padding:6px 12px;font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;
+  color:var(--textd);cursor:pointer;transition:all .2s;text-transform:uppercase;
+}
+.mood-btn.active{border-color:var(--cb);color:var(--cb);background:rgba(139,26,42,.08)}
+
+.pe{
+  background:var(--card);border:1px solid var(--border);border-radius:3px;
+  padding:11px 13px;margin-bottom:6px;display:flex;gap:10px;align-items:flex-start;
+}
+.pe-a{width:2px;align-self:stretch;background:var(--cd);border-radius:2px;flex-shrink:0}
+.pe-b{flex:1;min-width:0}
+.pe-date{font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:var(--textd);text-transform:uppercase;margin-bottom:3px}
+.pe-mood{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;color:var(--cd);margin-bottom:3px}
+.pe-txt{font-size:12px;color:var(--textd);font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
+/* ══ STATS ══ */
+.xp-box{background:var(--card2);border:1px solid var(--borderc);border-radius:3px;padding:13px 14px;margin-bottom:12px}
+.xp-row{display:flex;justify-content:space-between;margin-bottom:7px}
+.xp-t{font-family:'Cinzel',serif;font-size:11px;color:var(--cb);letter-spacing:1px}
+.xp-n{font-size:11px;color:var(--textd)}
+.contract{background:var(--card);border:1px solid var(--border);border-radius:3px;padding:12px 14px;margin-bottom:7px}
+.ct-t{font-family:'Cinzel',serif;font-size:12px;color:var(--textb);margin-bottom:2px}
+.ct-s{font-size:10px;color:var(--textd);font-style:italic;margin-bottom:7px}
+
+/* safe area bottom for sb */
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div id="shell">
+  <!-- HEADER -->
+  <div id="hdr">
+    <div>
+      <div class="hdr-title">Журнал Героя</div>
+      <div class="hdr-sub">Кирквол — Недостаток</div>
+    </div>
+    <button class="hdr-chron" onclick="openChron()">Летопись</button>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- ══ ВРЕМЯ ══ -->
+    <div id="pg-time" class="page active">
+      <div class="ph">
+        <div class="ph-row">
+          <div><div class="ph-t">Время</div><div class="ph-s">Учёт и распределение</div></div>
+          <button class="ph-action" onclick="openModal('modal-add-time')">+ Запись</button>
+        </div>
+      </div>
+      <div class="sb">
+        <!-- active timer -->
+        <div class="timer-block" id="timer-block">
+          <div class="t-info">
+            <div class="t-cat" id="t-cat">—</div>
+            <div class="t-task" id="t-task">—</div>
+            <div class="t-el" id="t-el">00:00:00</div>
+          </div>
+          <button class="t-stop" onclick="stopTimer()">Стоп</button>
+        </div>
+
+        <!-- day total -->
+        <div class="day-total">
+          <div class="dt-row"><span class="dt-l">Сегодня всего</span><span class="dt-v" id="day-total">11ч 57м</span></div>
+          <div class="dt-row"><span class="dt-l">Продуктивных</span><span class="dt-v" style="color:var(--rp)">8ч 12м</span></div>
+          <div class="week-cols">
+            <div class="wc"><div class="wc-bw"><div class="wc-bf" style="height:72%"></div></div><div class="wc-l">Пн</div></div>
+            <div class="wc"><div class="wc-bw"><div class="wc-bf" style="height:55%"></div></div><div class="wc-l">Вт</div></div>
+            <div class="wc"><div class="wc-bw"><div class="wc-bf" style="height:88%"></div></div><div class="wc-l">Ср</div></div>
+            <div class="wc"><div class="wc-bw"><div class="wc-bf" style="height:40%"></div></div><div class="wc-l">Чт</div></div>
+            <div class="wc"><div class="wc-bw"><div class="wc-bf" style="height:66%"></div></div><div class="wc-l">Пт</div></div>
+            <div class="wc"><div class="wc-bw"><div class="wc-bf today" style="height:50%"></div></div><div class="wc-l">Сб</div></div>
+            <div class="wc"><div class="wc-bw"><div class="wc-bf" style="height:0%"></div></div><div class="wc-l">Вс</div></div>
+          </div>
+        </div>
+
+        <div class="slabel">Категории — сегодня</div>
+        <div class="cat-grid">
+          <div class="cat-card"><div class="cat-n">Работа</div><div class="cat-v">6ч 12м</div><div class="cat-w">Неделя: 34ч</div><div class="cat-pb"><div class="cat-pb-f" style="width:77%"></div></div></div>
+          <div class="cat-card"><div class="cat-n">Учёба</div><div class="cat-v">1ч 30м</div><div class="cat-w">Неделя: 9ч</div><div class="cat-pb"><div class="cat-pb-f" style="width:37%"></div></div></div>
+          <div class="cat-card"><div class="cat-n">Быт</div><div class="cat-v">2ч 40м</div><div class="cat-w">Неделя: 14ч</div><div class="cat-pb"><div class="cat-pb-f" style="width:55%"></div></div></div>
+          <div class="cat-card"><div class="cat-n">Спорт</div><div class="cat-v">0ч 45м</div><div class="cat-w">Неделя: 5ч</div><div class="cat-pb"><div class="cat-pb-f" style="width:22%"></div></div></div>
+          <div class="cat-card"><div class="cat-n">Отдых</div><div class="cat-v">3ч 05м</div><div class="cat-w">Неделя: 18ч</div><div class="cat-pb"><div class="cat-pb-f" style="width:63%"></div></div></div>
+          <div class="cat-card"><div class="cat-n">Прочее</div><div class="cat-v">0ч 20м</div><div class="cat-w">Неделя: 2ч</div><div class="cat-pb"><div class="cat-pb-f" style="width:8%"></div></div></div>
+        </div>
+
+        <div class="slabel">Записи сегодня</div>
+        <div id="entries-list">
+          <div class="entry-row"><div class="er-accent"></div><div class="er-info"><div class="er-task">Разработка модуля авторизации</div><div class="er-cat">Работа</div></div><div class="er-time">2ч 18м</div></div>
+          <div class="entry-row"><div class="er-accent"></div><div class="er-info"><div class="er-task">Японский — Duolingo</div><div class="er-cat">Учёба</div></div><div class="er-time">0ч 32м</div></div>
+          <div class="entry-row"><div class="er-accent"></div><div class="er-info"><div class="er-task">Созвон с командой</div><div class="er-cat">Работа</div></div><div class="er-time">1ч 05м</div></div>
+          <div class="entry-row"><div class="er-accent"></div><div class="er-info"><div class="er-task">Уборка и готовка</div><div class="er-cat">Быт</div></div><div class="er-time">1ч 40м</div></div>
+          <div class="entry-row"><div class="er-accent"></div><div class="er-info"><div class="er-task">Code review</div><div class="er-cat">Работа</div></div><div class="er-time">0ч 49м</div></div>
+          <div class="entry-row"><div class="er-accent"></div><div class="er-info"><div class="er-task">Чтение — Хроники</div><div class="er-cat">Отдых</div></div><div class="er-time">1ч 20м</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ЦЕЛИ ══ -->
+    <div id="pg-goals" class="page">
+      <div class="ph">
+        <div class="ph-row">
+          <div><div class="ph-t">Цели</div><div class="ph-s">Задачи, привычки, контракты</div></div>
+          <button class="ph-action" onclick="openAddGoal()">+ Добавить</button>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="goals-tabs" id="goals-tabs">
+        <div class="gtab active" onclick="switchGoalTab(0)">Ежедневные</div>
+        <div class="gtab" onclick="switchGoalTab(1)">Особые</div>
+        <div class="gtab" onclick="switchGoalTab(2)">Привычки</div>
+        <div class="gtab" onclick="switchGoalTab(3)">Контракты</div>
+      </div>
+
+      <div class="sb">
+        <!-- TAB 0: ЕЖЕДНЕВНЫЕ -->
+        <div class="gtab-panel active" id="gtab-0">
+          <div class="slabel" style="margin-top:2px">Повторяются каждый день</div>
+
+          <div class="task-card" id="tc-1">
+            <div class="card-l"></div>
+            <div class="task-check checked" onclick="toggleTask(this,'tc-1')">&#10003;</div>
+            <div class="task-body">
+              <div class="task-title">Утренняя зарядка — 15 мин</div>
+              <div class="task-note">Разминка, растяжка. До завтрака.</div>
+              <div class="task-meta">
+                <span class="tag tag-red">Здоровье</span>
+                <span class="diff"><span class="diff-pip lit-e"></span><span class="diff-pip"></span><span class="diff-pip"></span></span>
+                <span class="xp-badge">+20 опыта</span>
+                <div class="task-streak">
+                  <span>7д</span>
+                  <div class="streak-pip">
+                    <div class="pip lit"></div><div class="pip lit"></div><div class="pip lit"></div>
+                    <div class="pip lit"></div><div class="pip lit"></div><div class="pip lit"></div><div class="pip lit"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="task-card" id="tc-2">
+            <div class="card-l"></div>
+            <div class="task-check" onclick="toggleTask(this,'tc-2')">&#10003;</div>
+            <div class="task-body">
+              <div class="task-title">Японский — 30 минут</div>
+              <div class="task-note">Duolingo + повторение карточек Anki.</div>
+              <div class="task-meta">
+                <span class="tag tag-blue">Учёба</span>
+                <span class="diff"><span class="diff-pip lit-m"></span><span class="diff-pip lit-m"></span><span class="diff-pip"></span></span>
+                <span class="xp-badge">+35 опыта</span>
+                <div class="task-streak">
+                  <span>4д</span>
+                  <div class="streak-pip">
+                    <div class="pip lit"></div><div class="pip lit"></div><div class="pip lit"></div>
+                    <div class="pip lit"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="task-card" id="tc-3">
+            <div class="card-l"></div>
+            <div class="task-check" onclick="toggleTask(this,'tc-3')">&#10003;</div>
+            <div class="task-body">
+              <div class="task-title">Прочитать 20 страниц</div>
+              <div class="task-note">Любая книга из списка. Вечером.</div>
+              <div class="task-meta">
+                <span class="tag tag-gold">Развитие</span>
+                <span class="diff"><span class="diff-pip lit-e"></span><span class="diff-pip"></span><span class="diff-pip"></span></span>
+                <span class="xp-badge">+25 опыта</span>
+                <div class="task-streak">
+                  <span>2д</span>
+                  <div class="streak-pip">
+                    <div class="pip lit"></div><div class="pip lit"></div><div class="pip"></div>
+                    <div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="task-card" id="tc-4">
+            <div class="card-l"></div>
+            <div class="task-check checked" onclick="toggleTask(this,'tc-4')">&#10003;</div>
+            <div class="task-body">
+              <div class="task-title">Медитация — 10 минут</div>
+              <div class="task-note">Вечерняя сессия. За час до сна.</div>
+              <div class="task-meta">
+                <span class="tag tag-green">Ум</span>
+                <span class="diff"><span class="diff-pip lit-e"></span><span class="diff-pip"></span><span class="diff-pip"></span></span>
+                <span class="xp-badge">+15 опыта</span>
+                <div class="task-streak">
+                  <span>12д</span>
+                  <div class="streak-pip">
+                    <div class="pip lit"></div><div class="pip lit"></div><div class="pip lit"></div>
+                    <div class="pip lit"></div><div class="pip lit"></div><div class="pip lit"></div><div class="pip lit"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="task-card" id="tc-5">
+            <div class="card-l"></div>
+            <div class="task-check" onclick="toggleTask(this,'tc-5')">&#10003;</div>
+            <div class="task-body">
+              <div class="task-title">Запись в дневник</div>
+              <div class="task-note">Рефлексия дня. Минимум 3 предложения.</div>
+              <div class="task-meta">
+                <span class="tag tag-gold">Рефлексия</span>
+                <span class="diff"><span class="diff-pip lit-e"></span><span class="diff-pip"></span><span class="diff-pip"></span></span>
+                <span class="xp-badge">+20 опыта</span>
+                <div class="task-streak">
+                  <span>5д</span>
+                  <div class="streak-pip">
+                    <div class="pip lit"></div><div class="pip lit"></div><div class="pip lit"></div>
+                    <div class="pip lit"></div><div class="pip lit"></div><div class="pip"></div><div class="pip"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="daily-extra"></div>
+          <button class="btn" onclick="openAddGoal('daily')">+ Добавить ежедневную задачу</button>
+        </div>
+
+        <!-- TAB 1: ОСОБЫЕ -->
+        <div class="gtab-panel" id="gtab-1">
+          <div class="slabel" style="margin-top:2px">Разовые задачи и особые поручения</div>
+
+          <div class="task-card" id="st-1">
+            <div class="card-l"></div>
+            <div class="task-check" onclick="toggleTask(this,'st-1')">&#10003;</div>
+            <div class="task-body">
+              <div class="task-title">Купить учебник по грамматике N3</div>
+              <div class="task-note">Amazon или Ozon. До конца недели.</div>
+              <div class="task-meta">
+                <span class="tag tag-blue">Учёба</span>
+                <span class="diff"><span class="diff-pip lit-e"></span><span class="diff-pip"></span><span class="diff-pip"></span></span>
+                <span class="xp-badge">+30 опыта</span>
+                <span class="tag tag-grey">До 8 июн</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="task-card" id="st-2">
+            <div class="card-l"></div>
+            <div class="task-check" onclick="toggleTask(this,'st-2')">&#10003;</div>
+            <div class="task-body">
+              <div class="task-title">Настроить CI/CD для проекта</div>
+              <div class="task-note">GitHub Actions. Автодеплой на staging.</div>
+              <div class="task-meta">
+                <span class="tag tag-red">Работа</span>
+                <span class="diff"><span class="diff-pip lit-h"></span><span class="diff-pip lit-h"></span><span class="diff-pip lit-h"></span></span>
+                <span class="xp-badge">+80 опыта</span>
+                <span class="tag tag-grey">До 15 июн</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="task-card" id="st-3">
+            <div class="card-l"></div>
+            <div class="task-check checked" onclick="toggleTask(this,'st-3')">&#10003;</div>
+            <div class="task-body">
+              <div class="task-title">Пройти медосмотр</div>
+              <div class="task-note">Общий анализ крови, ЭКГ.</div>
+              <div class="task-meta">
+                <span class="tag tag-green">Здоровье</span>
+                <span class="diff"><span class="diff-pip lit-m"></span><span class="diff-pip lit-m"></span><span class="diff-pip"></span></span>
+                <span class="xp-badge">+50 опыта</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="task-card" id="st-4">
+            <div class="card-l"></div>
+            <div class="task-check" onclick="toggleTask(this,'st-4')">&#10003;</div>
+            <div class="task-body">
+              <div class="task-title">Написать резюме и обновить LinkedIn</div>
+              <div class="task-note">Актуализировать стек, добавить последние проекты.</div>
+              <div class="task-meta">
+                <span class="tag tag-gold">Карьера</span>
+                <span class="diff"><span class="diff-pip lit-m"></span><span class="diff-pip lit-m"></span><span class="diff-pip"></span></span>
+                <span class="xp-badge">+60 опыта</span>
+                <span class="tag tag-grey">До 30 июн</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="special-extra"></div>
+          <button class="btn" onclick="openAddGoal('special')">+ Добавить особую задачу</button>
+        </div>
+
+        <!-- TAB 2: ПРИВЫЧКИ -->
+        <div class="gtab-panel" id="gtab-2">
+          <div class="slabel" style="margin-top:2px">Нажми + или − чтобы отметить</div>
+
+          <div class="habit-card">
+            <div class="habit-top">
+              <div>
+                <div class="habit-title">Здоровое питание</div>
+                <div class="habit-note">Без фастфуда, норма калорий</div>
+              </div>
+              <div class="habit-controls">
+                <button class="habit-btn minus" onclick="habitScore(this,-1)">−</button>
+                <button class="habit-btn plus" onclick="habitScore(this,1)">+</button>
+              </div>
+            </div>
+            <div class="habit-bottom">
+              <div class="habit-score">
+                <div class="habit-score-fill pos" style="width:70%"></div>
+              </div>
+              <span class="tag tag-green">+12 / −2</span>
+              <span class="xp-badge">+15 за +</span>
+            </div>
+          </div>
+
+          <div class="habit-card">
+            <div class="habit-top">
+              <div>
+                <div class="habit-title">Физическая активность</div>
+                <div class="habit-note">Любое движение: пешком, зал, бег</div>
+              </div>
+              <div class="habit-controls">
+                <button class="habit-btn minus" onclick="habitScore(this,-1)">−</button>
+                <button class="habit-btn plus" onclick="habitScore(this,1)">+</button>
+              </div>
+            </div>
+            <div class="habit-bottom">
+              <div class="habit-score">
+                <div class="habit-score-fill pos" style="width:85%"></div>
+              </div>
+              <span class="tag tag-green">+17 / −1</span>
+              <span class="xp-badge">+20 за +</span>
+            </div>
+          </div>
+
+          <div class="habit-card">
+            <div class="habit-top">
+              <div>
+                <div class="habit-title">Ранний подъём</div>
+                <div class="habit-note">До 07:30. Не нажимать повтор.</div>
+              </div>
+              <div class="habit-controls">
+                <button class="habit-btn minus" onclick="habitScore(this,-1)">−</button>
+                <button class="habit-btn plus" onclick="habitScore(this,1)">+</button>
+              </div>
+            </div>
+            <div class="habit-bottom">
+              <div class="habit-score">
+                <div class="habit-score-fill pos" style="width:45%"></div>
+              </div>
+              <span class="tag tag-gold">+8 / −5</span>
+              <span class="xp-badge">+15 за +</span>
+            </div>
+          </div>
+
+          <div class="habit-card">
+            <div class="habit-top">
+              <div>
+                <div class="habit-title">Прокрастинация</div>
+                <div class="habit-note">Соцсети вместо работы</div>
+              </div>
+              <div class="habit-controls">
+                <button class="habit-btn minus" onclick="habitScore(this,-1)">−</button>
+                <button class="habit-btn plus" onclick="habitScore(this,1)">+</button>
+              </div>
+            </div>
+            <div class="habit-bottom">
+              <div class="habit-score">
+                <div class="habit-score-fill neg" style="width:40%"></div>
+              </div>
+              <span class="tag tag-red">+2 / −9</span>
+              <span class="xp-badge">−25 за −</span>
+            </div>
+          </div>
+
+          <div class="habit-card">
+            <div class="habit-top">
+              <div>
+                <div class="habit-title">Достаточный сон</div>
+                <div class="habit-note">7+ часов. Отбой до полуночи.</div>
+              </div>
+              <div class="habit-controls">
+                <button class="habit-btn minus" onclick="habitScore(this,-1)">−</button>
+                <button class="habit-btn plus" onclick="habitScore(this,1)">+</button>
+              </div>
+            </div>
+            <div class="habit-bottom">
+              <div class="habit-score">
+                <div class="habit-score-fill pos" style="width:55%"></div>
+              </div>
+              <span class="tag tag-gold">+10 / −4</span>
+              <span class="xp-badge">+20 за +</span>
+            </div>
+          </div>
+
+          <div id="habits-extra"></div>
+          <button class="btn" onclick="openAddGoal('habit')">+ Добавить привычку</button>
+        </div>
+
+        <!-- TAB 3: КОНТРАКТЫ (долгосрочные) -->
+        <div class="gtab-panel" id="gtab-3">
+          <div class="slabel" style="margin-top:2px">Крупные цели с этапами</div>
+
+          <div class="lt-card">
+            <div class="lt-header">
+              <div>
+                <div class="lt-title">Выучить японский язык N3</div>
+                <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+                  <span class="tag tag-blue">Учёба</span>
+                  <span class="tag tag-grey">До дек 2025</span>
+                  <span class="xp-badge">+500 опыта</span>
+                </div>
+              </div>
+              <div class="lt-pct">18%</div>
+            </div>
+            <div class="lt-note">Сдать экзамен JLPT N3. Ежедневно: Anki 20 слов, грамматика 1 урок, слушание 15 мин.</div>
+            <div class="pbar"><div class="pbar-f" style="width:18%"></div></div>
+            <div class="lt-steps">
+              <div class="lt-step done-step"><div class="step-check checked" onclick="toggleStep(this)">&#10003;</div>Хирагана и катакана</div>
+              <div class="lt-step done-step"><div class="step-check checked" onclick="toggleStep(this)">&#10003;</div>500 базовых слов</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Грамматика N5 — пройдена</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Грамматика N4 — пройдена</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>2000 слов Anki</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Грамматика N3 — пройдена</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Пробный экзамен JLPT N3</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Сдать JLPT N3</div>
+            </div>
+          </div>
+
+          <div class="lt-card">
+            <div class="lt-header">
+              <div>
+                <div class="lt-title">Создать собственную игру</div>
+                <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+                  <span class="tag tag-red">Проект</span>
+                  <span class="tag tag-grey">Без дедлайна</span>
+                  <span class="xp-badge">+1000 опыта</span>
+                </div>
+              </div>
+              <div class="lt-pct">37%</div>
+            </div>
+            <div class="lt-note">Indie-игра на Godot. Жанр: тактическая RPG. Соло-разработка.</div>
+            <div class="pbar"><div class="pbar-f" style="width:37%"></div></div>
+            <div class="lt-steps">
+              <div class="lt-step done-step"><div class="step-check checked" onclick="toggleStep(this)">&#10003;</div>Концепт и жанр</div>
+              <div class="lt-step done-step"><div class="step-check checked" onclick="toggleStep(this)">&#10003;</div>Дизайн-документ (GDD)</div>
+              <div class="lt-step done-step"><div class="step-check checked" onclick="toggleStep(this)">&#10003;</div>Прототип боевой системы</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Базовый ИИ врагов</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Уровень 1 — завершён</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Сюжет и диалоги</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Альфа-версия</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Релиз в itch.io</div>
+            </div>
+          </div>
+
+          <div class="lt-card">
+            <div class="lt-header">
+              <div>
+                <div class="lt-title">Пробежать 5 км без остановки</div>
+                <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+                  <span class="tag tag-green">Здоровье</span>
+                  <span class="tag tag-grey">До авг 2025</span>
+                  <span class="xp-badge">+300 опыта</span>
+                </div>
+              </div>
+              <div class="lt-pct">62%</div>
+            </div>
+            <div class="lt-note">Программа Couch to 5K. Текущий рекорд: 3.1 км. Тренировки пн/ср/пт.</div>
+            <div class="pbar"><div class="pbar-f" style="width:62%"></div></div>
+            <div class="lt-steps">
+              <div class="lt-step done-step"><div class="step-check checked" onclick="toggleStep(this)">&#10003;</div>Пробежать 1 км</div>
+              <div class="lt-step done-step"><div class="step-check checked" onclick="toggleStep(this)">&#10003;</div>Пробежать 2 км</div>
+              <div class="lt-step done-step"><div class="step-check checked" onclick="toggleStep(this)">&#10003;</div>Пробежать 3 км</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Пробежать 4 км</div>
+              <div class="lt-step"><div class="step-check" onclick="toggleStep(this)">&#10003;</div>Пробежать 5 км</div>
+            </div>
+          </div>
+
+          <button class="btn" onclick="openAddGoal('contract')">+ Добавить контракт</button>
+        </div>
+      </div><!-- /sb -->
+    </div>
+
+    <!-- ══ ДНЕВНИК ══ -->
+    <div id="pg-diary" class="page">
+      <div class="ph">
+        <div class="ph-row">
+          <div><div class="ph-t">Дневник</div><div class="ph-s">Личные записи</div></div>
+        </div>
+      </div>
+      <div class="sb">
+        <div class="slabel">Настроение</div>
+        <div class="mood-row">
+          <button class="mood-btn active" onclick="setMood(this)">Спокойно</button>
+          <button class="mood-btn" onclick="setMood(this)">Хорошо</button>
+          <button class="mood-btn" onclick="setMood(this)">Напряжённо</button>
+          <button class="mood-btn" onclick="setMood(this)">Устал</button>
+          <button class="mood-btn" onclick="setMood(this)">Отлично</button>
+        </div>
+        <div class="j-page">
+          <div class="j-date" id="today-date">6 июня — суббота</div>
+          <textarea class="j-ta" rows="6" placeholder="Что произошло сегодня..."></textarea>
+        </div>
+        <button class="btn" style="margin-bottom:18px" onclick="saveDiaryEntry()">Сохранить запись</button>
+
+        <div class="slabel">Прошлые записи</div>
+        <div id="diary-list">
+          <div class="pe"><div class="pe-a"></div><div class="pe-b"><div class="pe-date">5 июня — пятница</div><div class="pe-mood">Хорошо</div><div class="pe-txt">Завершил три задания. Продуктивный день, удалось разобраться с блокером в проекте.</div></div></div>
+          <div class="pe"><div class="pe-a"></div><div class="pe-b"><div class="pe-date">4 июня — четверг</div><div class="pe-mood">Напряжённо</div><div class="pe-txt">Работа затянулась до поздна, не успел на тренировку. Нужно следить за балансом.</div></div></div>
+          <div class="pe"><div class="pe-a"></div><div class="pe-b"><div class="pe-date">3 июня — среда</div><div class="pe-mood">Спокойно</div><div class="pe-txt">Тихий вечер. Прочитал двадцать страниц, сделал заметки по японскому.</div></div></div>
+          <div class="pe"><div class="pe-a"></div><div class="pe-b"><div class="pe-date">2 июня — вторник</div><div class="pe-mood">Устал</div><div class="pe-txt">Сложный день. Встречи, дедлайны. К вечеру едва хватило сил.</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ТРЕНИРОВКИ ══ -->
+    <div id="pg-training" class="page">
+      <div class="ph">
+        <div class="ph-row">
+          <div><div class="ph-t">Тренировки</div><div class="ph-s">Арсенал и подготовка</div></div>
+          <button class="ph-action" onclick="openModal('modal-add-ex')">+ Упражнение</button>
+        </div>
+      </div>
+      <div class="sb">
+        <div class="streak-b">
+          <div><div class="stk-l">Серия</div><div class="stk-t">Не прервана</div></div>
+          <div style="text-align:right"><div class="stk-n">12</div><div class="stk-d">дней подряд</div></div>
+        </div>
+
+        <div class="slabel">Нагрузка за неделю</div>
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-l"></div>
+          <div class="muscle-row"><div class="muscle-n">Спина</div><div class="muscle-bg"><div class="muscle-f" style="width:85%"></div></div><div class="muscle-v">85%</div></div>
+          <div class="muscle-row"><div class="muscle-n">Грудь</div><div class="muscle-bg"><div class="muscle-f" style="width:70%"></div></div><div class="muscle-v">70%</div></div>
+          <div class="muscle-row"><div class="muscle-n">Ноги</div><div class="muscle-bg"><div class="muscle-f" style="width:60%"></div></div><div class="muscle-v">60%</div></div>
+          <div class="muscle-row"><div class="muscle-n">Кор</div><div class="muscle-bg"><div class="muscle-f" style="width:55%"></div></div><div class="muscle-v">55%</div></div>
+          <div class="muscle-row"><div class="muscle-n">Бицепс</div><div class="muscle-bg"><div class="muscle-f" style="width:75%"></div></div><div class="muscle-v">75%</div></div>
+          <div class="muscle-row"><div class="muscle-n">Трицепс</div><div class="muscle-bg"><div class="muscle-f" style="width:65%"></div></div><div class="muscle-v">65%</div></div>
+        </div>
+
+        <div class="slabel">Сегодня</div>
+        <div class="w-card"><div class="w-body"><div class="w-name">Подтягивания</div><div class="w-muscles">Спина, бицепс</div><div class="w-chips"><div class="chip"><b>4</b> подхода</div><div class="chip"><b>8</b> повт</div><div class="chip">вес тела</div></div></div><div class="w-done checked" onclick="this.classList.toggle('checked')">&#10003;</div></div>
+        <div class="w-card"><div class="w-body"><div class="w-name">Отжимания</div><div class="w-muscles">Грудь, трицепс</div><div class="w-chips"><div class="chip"><b>3</b> подхода</div><div class="chip"><b>15</b> повт</div></div></div><div class="w-done checked" onclick="this.classList.toggle('checked')">&#10003;</div></div>
+        <div class="w-card"><div class="w-body"><div class="w-name">Бег</div><div class="w-muscles">Кардио, выносливость</div><div class="w-chips"><div class="chip"><b>3.1</b> км</div><div class="chip"><b>18</b> мин</div><div class="chip">темп 5:48</div></div></div><div class="w-done" onclick="this.classList.toggle('checked')">&#10003;</div></div>
+
+        <div class="slabel" style="margin-top:14px">Все упражнения</div>
+        <div class="w-card"><div class="w-body"><div class="w-name">Приседания</div><div class="w-muscles">Квадрицепс, ягодицы</div><div class="w-chips"><div class="chip"><b>4</b> подхода</div><div class="chip"><b>12</b> повт</div><div class="chip">40 кг</div></div></div><div class="w-done" onclick="this.classList.toggle('checked')">&#10003;</div></div>
+        <div class="w-card"><div class="w-body"><div class="w-name">Планка</div><div class="w-muscles">Кор, пресс</div><div class="w-chips"><div class="chip"><b>3</b> подхода</div><div class="chip"><b>60</b> сек</div></div></div><div class="w-done" onclick="this.classList.toggle('checked')">&#10003;</div></div>
+        <div class="w-card"><div class="w-body"><div class="w-name">Тяга блока</div><div class="w-muscles">Широчайшие, ромбовидные</div><div class="w-chips"><div class="chip"><b>3</b> подхода</div><div class="chip"><b>10</b> повт</div><div class="chip">35 кг</div></div></div><div class="w-done" onclick="this.classList.toggle('checked')">&#10003;</div></div>
+        <div id="ex-extra"></div>
+      </div>
+    </div>
+
+    <!-- ══ СТАТИСТИКА ══ -->
+    <div id="pg-stats" class="page">
+      <div class="ph">
+        <div class="ph-row">
+          <div><div class="ph-t">Статистика</div><div class="ph-s">Летопись свершений</div></div>
+        </div>
+      </div>
+      <div class="sb">
+        <div class="sg">
+          <div class="sb-box"><div class="sb-v">47</div><div class="sb-l">задач выполнено</div></div>
+          <div class="sb-box"><div class="sb-v">12</div><div class="sb-l">дней подряд</div></div>
+          <div class="sb-box"><div class="sb-v">2350</div><div class="sb-l">опыта набрано</div></div>
+          <div class="sb-box"><div class="sb-v">18</div><div class="sb-l">записей дневника</div></div>
+          <div class="sb-box"><div class="sb-v">34ч</div><div class="sb-l">работы за неделю</div></div>
+          <div class="sb-box"><div class="sb-v">16</div><div class="sb-l">тренировок</div></div>
+        </div>
+
+        <div class="xp-box">
+          <div class="xp-row"><span class="xp-t">Уровень 4 — Ветеран</span><span class="xp-n">2350 / 3000</span></div>
+          <div class="pbar"><div class="pbar-f" style="width:78%"></div></div>
+          <div style="font-size:10px;color:var(--textd);font-style:italic;margin-top:4px">До уровня 5: 650 опыта</div>
+        </div>
+
+        <div class="slabel">Прогресс месяца</div>
+        <div class="contract"><div class="ct-t">Записей в дневнике</div><div class="ct-s">18 из 30 дней</div><div class="pbar"><div class="pbar-f" style="width:60%"></div></div></div>
+        <div class="contract"><div class="ct-t">Тренировок</div><div class="ct-s">16 из 20 запланированных</div><div class="pbar"><div class="pbar-f" style="width:80%"></div></div></div>
+        <div class="contract"><div class="ct-t">Ежедневных задач</div><div class="ct-s">87% выполнения за месяц</div><div class="pbar"><div class="pbar-f" style="width:87%"></div></div></div>
+        <div class="contract"><div class="ct-t">Норма сна 7+ ч</div><div class="ct-s">16 из 30 ночей</div><div class="pbar"><div class="pbar-f" style="width:53%"></div></div></div>
+        <div class="contract"><div class="ct-t">Привычки — баланс</div><div class="ct-s">Позитивных: 59 / Негативных: 21</div><div class="pbar"><div class="pbar-f" style="width:74%"></div></div></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- BOTTOM NAV -->
+  <nav id="nav">
+    <button class="nav-btn active" onclick="navTo('time',this)">
+      <div class="ni">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+      </div>
+      <span class="nl">Время</span>
+    </button>
+    <button class="nav-btn" onclick="navTo('goals',this)">
+      <div class="ni">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </div>
+      <span class="nl">Цели</span>
+    </button>
+    <button class="nav-btn" onclick="navTo('diary',this)">
+      <div class="ni">
+        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <span class="nl">Дневник</span>
+    </button>
+    <button class="nav-btn" onclick="navTo('training',this)">
+      <div class="ni">
+        <svg viewBox="0 0 24 24"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 10h3v4H3z"/><path d="M18 10h3v4h-3z"/></svg>
+      </div>
+      <span class="nl">Трен.</span>
+    </button>
+    <button class="nav-btn" onclick="navTo('stats',this)">
+      <div class="ni">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <span class="nl">Стат.</span>
+    </button>
+  </nav>
+</div>
+
+<!-- CHRONICLE PANEL -->
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+<div class="chron-panel" id="chron">
+  <div class="chron-hdr">
+    <span class="chron-title">Летопись</span>
+    <button class="chron-close" onclick="closeChron()">&#10005;</button>
+  </div>
+  <div class="chron-body" id="chron-body">
+    <div class="chron-item">Сегодня выполнено 5 целей.<div class="chron-dt">6 июня — сегодня</div></div>
+    <div class="chron-item">Работа: 6 часов 12 минут. Продуктивный день.<div class="chron-dt">6 июня — сегодня</div></div>
+    <div class="chron-item">Серия тренировок: 12 дней без перерыва.<div class="chron-dt">6 июня — сегодня</div></div>
+    <div class="chron-item">Набрано 2350 очков опыта. До уровня 5 осталось 650.<div class="chron-dt">5 июня — вчера</div></div>
+    <div class="chron-item">Контракт «Пробежать 5 км» достиг 62%.<div class="chron-dt">5 июня — вчера</div></div>
+    <div class="chron-item">Уровень 4 достигнут. Ветеран Кирквола.<div class="chron-dt">1 июня</div></div>
+  </div>
+</div>
+
+<!-- MODAL: Add time -->
+<div class="modal-bg" id="modal-add-time" onclick="bgClose(event,'modal-add-time')">
+  <div class="modal">
+    <div class="modal-title">Записать время</div>
+    <div class="form-group">
+      <label class="field-label">Категория</label>
+      <div class="cat-sel" id="modal-cat-sel">
+        <button class="csel-btn active" onclick="selModalCat(this)">Работа</button>
+        <button class="csel-btn" onclick="selModalCat(this)">Учёба</button>
+        <button class="csel-btn" onclick="selModalCat(this)">Быт</button>
+        <button class="csel-btn" onclick="selModalCat(this)">Спорт</button>
+        <button class="csel-btn" onclick="selModalCat(this)">Отдых</button>
+        <button class="csel-btn" onclick="selModalCat(this)">Прочее</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="field-label">Задача</label>
+      <input class="field" id="mt-task" placeholder="Чем занимался...">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" style="flex:1" onclick="startTimerFromModal()">Запустить таймер</button>
+      <button class="btn" style="flex:1;color:var(--textd)" onclick="addManualTime()">Вручную</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add goal -->
+<div class="modal-bg" id="modal-add-goal" onclick="bgClose(event,'modal-add-goal')">
+  <div class="modal">
+    <div class="modal-title" id="modal-goal-title">Новая задача</div>
+    <div class="form-group">
+      <label class="field-label">Тип</label>
+      <div class="type-select" id="goal-type-sel">
+        <button class="type-opt active" onclick="selGoalType(this,'daily')">Ежедневная</button>
+        <button class="type-opt" onclick="selGoalType(this,'special')">Особая</button>
+        <button class="type-opt" onclick="selGoalType(this,'habit')">Привычка</button>
+        <button class="type-opt" onclick="selGoalType(this,'contract')">Контракт</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="field-label">Название</label>
+      <input class="field" id="g-title" placeholder="Название задачи...">
+    </div>
+    <div class="form-group">
+      <label class="field-label">Описание / заметка</label>
+      <input class="field" id="g-note" placeholder="Детали, условия...">
+    </div>
+    <div class="form-group" id="g-diff-group">
+      <label class="field-label">Сложность</label>
+      <div class="diff-select" id="g-diff-sel">
+        <button class="diff-opt" onclick="selDiff(this,'e')">Легко</button>
+        <button class="diff-opt sel-m active-diff" onclick="selDiff(this,'m')">Средне</button>
+        <button class="diff-opt" onclick="selDiff(this,'h')">Сложно</button>
+      </div>
+    </div>
+    <div class="form-group" id="g-tag-group">
+      <label class="field-label">Тег</label>
+      <div class="cat-sel">
+        <button class="csel-btn active" onclick="selTag(this)">Здоровье</button>
+        <button class="csel-btn" onclick="selTag(this)">Учёба</button>
+        <button class="csel-btn" onclick="selTag(this)">Работа</button>
+        <button class="csel-btn" onclick="selTag(this)">Развитие</button>
+        <button class="csel-btn" onclick="selTag(this)">Прочее</button>
+      </div>
+    </div>
+    <button class="btn" onclick="addGoalFromModal()">Добавить</button>
+  </div>
+</div>
+
+<!-- MODAL: Add exercise -->
+<div class="modal-bg" id="modal-add-ex" onclick="bgClose(event,'modal-add-ex')">
+  <div class="modal">
+    <div class="modal-title">Новое упражнение</div>
+    <div class="form-group">
+      <label class="field-label">Название</label>
+      <input class="field" id="ex-name" placeholder="Подтягивания...">
+    </div>
+    <div class="form-group">
+      <label class="field-label">Мышечные группы</label>
+      <input class="field" id="ex-muscles" placeholder="Спина, бицепс...">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div>
+        <label class="field-label">Подходы</label>
+        <input class="field" id="ex-sets" type="number" placeholder="4">
+      </div>
+      <div>
+        <label class="field-label">Повторений / сек</label>
+        <input class="field" id="ex-reps" type="number" placeholder="10">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="field-label">Вес / дистанция (необязательно)</label>
+      <input class="field" id="ex-weight" placeholder="40 кг / 3 км...">
+    </div>
+    <button class="btn" onclick="addExercise()">Добавить</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════
+   STARFIELD
+═══════════════════════════════════ */
+(function(){
+  const c=document.getElementById('cv'),ctx=c.getContext('2d');
+  let W,H,stars=[];
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+  function mkStar(){
+    const tinted=Math.random()<.08;
+    return{
+      x:Math.random()*W,y:Math.random()*H,
+      r:Math.random()*1.1+.15,
+      a:Math.random(),da:(Math.random()-.5)*.006,
+      dx:(Math.random()-.5)*.025,dy:(Math.random()-.5)*.008,
+      tinted
+    };
+  }
+  function init(){resize();stars=Array.from({length:380},mkStar);loop()}
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    // deep bg
+    const bg=ctx.createRadialGradient(W*.45,H*.5,0,W*.45,H*.5,W*.9);
+    bg.addColorStop(0,'rgba(20,5,16,.65)');bg.addColorStop(.5,'rgba(9,3,12,.8)');bg.addColorStop(1,'rgba(2,1,4,1)');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    // nebula
+    const nb=ctx.createRadialGradient(W*.25,H*.35,0,W*.25,H*.35,W*.3);
+    nb.addColorStop(0,'rgba(90,10,25,.07)');nb.addColorStop(1,'transparent');
+    ctx.fillStyle=nb;ctx.fillRect(0,0,W,H);
+    const nb2=ctx.createRadialGradient(W*.75,H*.7,0,W*.75,H*.7,W*.22);
+    nb2.addColorStop(0,'rgba(20,5,50,.05)');nb2.addColorStop(1,'transparent');
+    ctx.fillStyle=nb2;ctx.fillRect(0,0,W,H);
+    // stars
+    for(const s of stars){
+      s.a+=s.da;if(s.a>1){s.a=1;s.da*=-1}if(s.a<0){s.a=0;s.da*=-1}
+      s.x+=s.dx;s.y+=s.dy;
+      if(s.x<0)s.x=W;if(s.x>W)s.x=0;if(s.y<0)s.y=H;if(s.y>H)s.y=0;
+      const col=s.tinted?`rgba(255,160,160,${s.a})`:`rgba(${200+Math.floor(Math.random()*55)},${200+Math.floor(Math.random()*55)},255,${s.a})`;
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+      if(s.r>.8){
+        ctx.beginPath();ctx.arc(s.x,s.y,s.r*2.8,0,Math.PI*2);
+        ctx.fillStyle=s.tinted?`rgba(255,100,100,${s.a*.12})`:`rgba(200,220,255,${s.a*.12})`;ctx.fill();
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  window.addEventListener('resize',()=>{resize();stars=Array.from({length:380},mkStar)});
+  init();
+})();
+
+/* ═══════════════════════════════════
+   NAV
+═══════════════════════════════════ */
+function navTo(page,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+page).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ═══════════════════════════════════
+   GOAL TABS
+═══════════════════════════════════ */
+function switchGoalTab(i){
+  document.querySelectorAll('.gtab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  document.querySelectorAll('.gtab-panel').forEach((p,j)=>p.classList.toggle('active',j===i));
+}
+
+/* ═══════════════════════════════════
+   TASKS
+═══════════════════════════════════ */
+function toggleTask(chk,cardId){
+  chk.classList.toggle('checked');
+  const card=document.getElementById(cardId);
+  card.classList.toggle('done',chk.classList.contains('checked'));
+  if(chk.classList.contains('checked')){
+    addChronEntry('Задача выполнена: '+card.querySelector('.task-title').textContent);
+  }
+}
+function toggleStep(chk){
+  chk.classList.toggle('checked');
+  const step=chk.closest('.lt-step');
+  step.classList.toggle('done-step',chk.classList.contains('checked'));
+}
+
+/* ═══════════════════════════════════
+   HABITS
+═══════════════════════════════════ */
+function habitScore(btn,delta){
+  const card=btn.closest('.habit-card');
+  const fill=card.querySelector('.habit-score-fill');
+  let w=parseFloat(fill.style.width)||50;
+  w=Math.max(0,Math.min(100,w+delta*8));
+  fill.style.width=w+'%';
+  fill.className='habit-score-fill '+(w>=50?'pos':'neg');
+}
+
+/* ═══════════════════════════════════
+   MOOD / DIARY
+═══════════════════════════════════ */
+function setMood(btn){
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function saveDiaryEntry(){
+  const mood=document.querySelector('.mood-btn.active')?.textContent||'—';
+  const txt=document.querySelector('.j-ta').value.trim();
+  if(!txt)return;
+  const list=document.getElementById('diary-list');
+  const now=new Date();
+  const days=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+  const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const dateStr=`${now.getDate()} ${months[now.getMonth()]} — ${days[now.getDay()]}`;
+  const el=document.createElement('div');
+  el.className='pe';
+  el.innerHTML=`<div class="pe-a"></div><div class="pe-b"><div class="pe-date">${dateStr}</div><div class="pe-mood">${mood}</div><div class="pe-txt">${txt}</div></div>`;
+  list.prepend(el);
+  document.querySelector('.j-ta').value='';
+  addChronEntry('Запись в дневнике добавлена.');
+}
+
+/* ═══════════════════════════════════
+   TIMER
+═══════════════════════════════════ */
+let timerInt=null,timerStart=null,selCat='Работа';
+
+function selModalCat(btn){
+  document.querySelectorAll('#modal-cat-sel .csel-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  selCat=btn.textContent;
+}
+
+function startTimerFromModal(){
+  const task=document.getElementById('mt-task').value.trim();
+  if(!task)return;
+  closeModal('modal-add-time');
+  timerStart=Date.now();
+  document.getElementById('t-cat').textContent=selCat;
+  document.getElementById('t-task').textContent=task;
+  document.getElementById('timer-block').classList.add('on');
+  clearInterval(timerInt);
+  timerInt=setInterval(()=>{
+    const s=Math.floor((Date.now()-timerStart)/1000);
+    document.getElementById('t-el').textContent=
+      String(Math.floor(s/3600)).padStart(2,'0')+':'+
+      String(Math.floor(s%3600/60)).padStart(2,'0')+':'+
+      String(s%60).padStart(2,'0');
+  },1000);
+}
+
+function stopTimer(){
+  clearInterval(timerInt);
+  const s=Math.floor((Date.now()-timerStart)/1000);
+  const h=Math.floor(s/3600),m=Math.floor(s%3600/60);
+  const task=document.getElementById('t-task').textContent;
+  const cat=document.getElementById('t-cat').textContent;
+  addEntry(task,cat,`${h}ч ${m}м`);
+  document.getElementById('timer-block').classList.remove('on');
+  document.getElementById('mt-task').value='';
+}
+
+function addManualTime(){
+  const task=document.getElementById('mt-task').value.trim();
+  if(!task)return;
+  const t=prompt('Сколько времени? (напр: 1ч 30м)');
+  if(!t)return;
+  closeModal('modal-add-time');
+  addEntry(task,selCat,t);
+}
+
+function addEntry(task,cat,time){
+  const list=document.getElementById('entries-list');
+  const el=document.createElement('div');
+  el.className='entry-row';
+  el.innerHTML=`<div class="er-accent"></div><div class="er-info"><div class="er-task">${task}</div><div class="er-cat">${cat}</div></div><div class="er-time">${time}</div>`;
+  list.prepend(el);
+  addChronEntry(`${cat}: ${task} — ${time}`);
+}
+
+/* ═══════════════════════════════════
+   ADD GOAL MODAL
+═══════════════════════════════════ */
+let curGoalType='daily';
+function openAddGoal(type){
+  curGoalType=type||'daily';
+  const titles={daily:'Новая ежедневная задача',special:'Новая особая задача',habit:'Новая привычка',contract:'Новый контракт'};
+  document.getElementById('modal-goal-title').textContent=titles[curGoalType]||'Новая задача';
+  document.querySelectorAll('#goal-type-sel .type-opt').forEach(b=>{
+    const map={daily:'Ежедневная',special:'Особая',habit:'Привычка',contract:'Контракт'};
+    b.classList.toggle('active',b.textContent===map[curGoalType]);
+  });
+  openModal('modal-add-goal');
+}
+function selGoalType(btn,type){
+  document.querySelectorAll('#goal-type-sel .type-opt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');curGoalType=type;
+}
+function selDiff(btn,d){
+  document.querySelectorAll('#g-diff-sel .diff-opt').forEach(b=>{b.className='diff-opt'});
+  btn.classList.add('sel-'+d);
+}
+function selTag(btn){
+  document.querySelectorAll('#g-tag-group .csel-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function addGoalFromModal(){
+  const title=document.getElementById('g-title').value.trim();
+  if(!title)return;
+  const note=document.getElementById('g-note').value.trim();
+  const tag=document.querySelector('#g-tag-group .csel-btn.active')?.textContent||'Прочее';
+  const tagMap={'Здоровье':'tag-green','Учёба':'tag-blue','Работа':'tag-red','Развитие':'tag-gold','Прочее':'tag-grey','Ум':'tag-green','Карьера':'tag-gold'};
+  const tc=tagMap[tag]||'tag-grey';
+
+  if(curGoalType==='daily'||curGoalType==='special'){
+    const id='tc-'+Date.now();
+    const el=document.createElement('div');
+    el.className='task-card';el.id=id;
+    el.innerHTML=`
+      <div class="card-l"></div>
+      <div class="task-check" onclick="toggleTask(this,'${id}')">&#10003;</div>
+      <div class="task-body">
+        <div class="task-title">${title}</div>
+        ${note?`<div class="task-note">${note}</div>`:''}
+        <div class="task-meta">
+          <span class="tag ${tc}">${tag}</span>
+          <span class="xp-badge">+25 опыта</span>
+          ${curGoalType==='daily'?`<div class="task-streak"><span>0д</span><div class="streak-pip"><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div></div>`:''}
+        </div>
+      </div>`;
+    const target=curGoalType==='daily'?'daily-extra':'special-extra';
+    document.getElementById(target).appendChild(el);
+  }
+
+  if(curGoalType==='habit'){
+    const el=document.createElement('div');
+    el.className='habit-card';
+    el.innerHTML=`
+      <div class="habit-top">
+        <div><div class="habit-title">${title}</div>${note?`<div class="habit-note">${note}</div>`:''}</div>
+        <div class="habit-controls">
+          <button class="habit-btn minus" onclick="habitScore(this,-1)">−</button>
+          <button class="habit-btn plus" onclick="habitScore(this,1)">+</button>
+        </div>
+      </div>
+      <div class="habit-bottom">
+        <div class="habit-score"><div class="habit-score-fill pos" style="width:50%"></div></div>
+        <span class="tag ${tc}">${tag}</span>
+        <span class="xp-badge">+15 за +</span>
+      </div>`;
+    document.getElementById('habits-extra').appendChild(el);
+  }
+
+  if(curGoalType==='contract'){
+    const el=document.createElement('div');
+    el.className='lt-card';
+    el.innerHTML=`
+      <div class="lt-header">
+        <div><div class="lt-title">${title}</div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap"><span class="tag ${tc}">${tag}</span><span class="xp-badge">+200 опыта</span></div></div>
+        <div class="lt-pct">0%</div>
+      </div>
+      ${note?`<div class="lt-note">${note}</div>`:''}
+      <div class="pbar"><div class="pbar-f" style="width:0%"></div></div>
+      <div class="lt-steps"></div>`;
+    document.querySelector('#gtab-3 .btn').before(el);
+  }
+
+  closeModal('modal-add-goal');
+  document.getElementById('g-title').value='';
+  document.getElementById('g-note').value='';
+  addChronEntry('Добавлено: '+title);
+}
+
+/* ═══════════════════════════════════
+   ADD EXERCISE
+═══════════════════════════════════ */
+function addExercise(){
+  const name=document.getElementById('ex-name').value.trim();
+  if(!name)return;
+  const muscles=document.getElementById('ex-muscles').value||'—';
+  const sets=document.getElementById('ex-sets').value||'3';
+  const reps=document.getElementById('ex-reps').value||'10';
+  const weight=document.getElementById('ex-weight').value;
+  const el=document.createElement('div');
+  el.className='w-card';
+  el.innerHTML=`<div class="w-body"><div class="w-name">${name}</div><div class="w-muscles">${muscles}</div><div class="w-chips"><div class="chip"><b>${sets}</b> подхода</div><div class="chip"><b>${reps}</b> повт</div>${weight?`<div class="chip">${weight}</div>`:''}</div></div><div class="w-done" onclick="this.classList.toggle('checked')">&#10003;</div>`;
+  document.getElementById('ex-extra').appendChild(el);
+  closeModal('modal-add-ex');
+  ['ex-name','ex-muscles','ex-sets','ex-reps','ex-weight'].forEach(id=>{document.getElementById(id).value=''});
+}
+
+/* ═══════════════════════════════════
+   MODALS
+═══════════════════════════════════ */
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function bgClose(e,id){if(e.target===e.currentTarget)closeModal(id)}
+
+/* ═══════════════════════════════════
+   CHRONICLE
+═══════════════════════════════════ */
+function openChron(){
+  document.getElementById('chron').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeChron(){
+  document.getElementById('chron').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+function closeAll(){closeChron()}
+function addChronEntry(text){
+  const now=new Date();
+  const months=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+  const dt=`${now.getDate()} ${months[now.getMonth()]}`;
+  const el=document.createElement('div');
+  el.className='chron-item';
+  el.innerHTML=`${text}<div class="chron-dt">${dt} — только что</div>`;
+  document.getElementById('chron-body').prepend(el);
+}
+
+/* ═══════════════════════════════════
+   DATE
+═══════════════════════════════════ */
+(function(){
+  const d=new Date();
+  const days=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+  const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  document.getElementById('today-date').textContent=`${d.getDate()} ${months[d.getMonth()]} — ${days[d.getDay()]}`;
+})();
+
+/* ═══════════════════════════════════
+   SERVICE WORKER
+═══════════════════════════════════ */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
