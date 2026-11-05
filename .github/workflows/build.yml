@@ -21,6 +21,11 @@ jobs:
         with:
           gradle-version: '8.4'
           validate-wrappers: false
+      - name: Bundle Dragon Age II poster for offline use
+        run: |
+          curl --fail --location --retry 3 --retry-delay 2 "https://cdn.qukasoft.com/f/990724/cG96YWFtNG0vcUp3ZUdGckg4OG5icmdQYmNFPQ/p/dragon-age-2-42306010.png" --output app/src/main/assets/web/dragon-age-2-poster.png
+          test -s app/src/main/assets/web/dragon-age-2-poster.png
+          file app/src/main/assets/web/dragon-age-2-poster.png
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
       - name: Upload APK
