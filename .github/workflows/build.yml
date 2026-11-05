@@ -25,7 +25,13 @@ jobs:
         run: |
           curl --fail --location --retry 3 --retry-delay 2 "https://cdn.qukasoft.com/f/990724/cG96YWFtNG0vcUp3ZUdGckg4OG5icmdQYmNFPQ/p/dragon-age-2-42306010.png" --output app/src/main/assets/web/dragon-age-2-poster.png
           test -s app/src/main/assets/web/dragon-age-2-poster.png
-          file app/src/main/assets/web/dragon-age-2-poster.png
+          curl --fail --location --retry 3 "https://thevendry.com/cdn-cgi/image/width%3D1920%2Cquality%3D75%2Cfit%3Dcontain%2Cmetadata%3Dnone%2Cformat%3Dauto/https%3A/s3.us-east-1.amazonaws.com/uploads.thevendry.co/23050/1708525862626_132796478_3846988621991108_5862578248773364479_n.jpg" --output app/src/main/assets/web/tavern-background.jpg
+          curl --fail --location --retry 3 "https://images.unsplash.com/photo-1767611131739-a009e323f62f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=75&w=500" --output app/src/main/assets/web/exercise-yoga.jpg
+          curl --fail --location --retry 3 "https://images.unsplash.com/photo-1731341400836-baaa5535b8d5?auto=format&fit=crop&fit=crop&w=500&q=75" --output app/src/main/assets/web/exercise-fitness.jpg
+          test -s app/src/main/assets/web/tavern-background.jpg
+          test -s app/src/main/assets/web/exercise-yoga.jpg
+          test -s app/src/main/assets/web/exercise-fitness.jpg
+          file app/src/main/assets/web/*.jpg app/src/main/assets/web/dragon-age-2-poster.png
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
       - name: Upload APK
