@@ -32,20 +32,24 @@ jobs:
           grep -q "versionCode 14" /tmp/journalhero-141/app/build.gradle
           cp -a /tmp/journalhero-141/. .
 
-      - name: Enable BuildConfig generation
+      - name: Fix Android build compatibility
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p = Path('app/build.gradle')
-          lines = p.read_text().splitlines()
-          if not any('buildConfig true' in line for line in lines):
+          s = p.read_text()
+          if 'buildConfig true' not in s:
+              lines = s.splitlines()
               for i, line in enumerate(lines):
                   if line.strip().startswith('compileSdk '):
                       lines[i+1:i+1] = ['', '    buildFeatures {', '        buildConfig true', '    }']
-                      p.write_text('\n'.join(lines) + '\n')
+                      s = '\\n'.join(lines) + '\\n'
                       break
               else:
                   raise SystemExit('Could not find compileSdk declaration')
+          if 'exclude group: \'org.jetbrains.kotlin\', module: \'kotlin-stdlib-jdk7\'' not in s:
+              s += "\\n\\nconfigurations.configureEach {\\n    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'\\n    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'\\n}\\n"
+          p.write_text(s)
           PY
 
       - name: Set up JDK 17
