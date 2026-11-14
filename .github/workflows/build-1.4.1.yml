@@ -37,13 +37,15 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p = Path('app/build.gradle')
-          s = p.read_text()
-          needle = "    compileSdk 34\\n"
-          replacement = needle + "\\n    buildFeatures {\\n        buildConfig true\\n    }\\n"
-          if 'buildConfig true' not in s:
-              if needle not in s:
+          lines = p.read_text().splitlines()
+          if not any('buildConfig true' in line for line in lines):
+              for i, line in enumerate(lines):
+                  if line.strip().startswith('compileSdk '):
+                      lines[i+1:i+1] = ['', '    buildFeatures {', '        buildConfig true', '    }']
+                      p.write_text('\n'.join(lines) + '\n')
+                      break
+              else:
                   raise SystemExit('Could not find compileSdk declaration')
-              p.write_text(s.replace(needle, replacement, 1))
           PY
 
       - name: Set up JDK 17
