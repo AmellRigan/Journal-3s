@@ -32,6 +32,20 @@ jobs:
           grep -q "versionCode 14" /tmp/journalhero-141/app/build.gradle
           cp -a /tmp/journalhero-141/. .
 
+      - name: Enable BuildConfig generation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/build.gradle')
+          s = p.read_text()
+          needle = "    compileSdk 34\\n"
+          replacement = needle + "\\n    buildFeatures {\\n        buildConfig true\\n    }\\n"
+          if 'buildConfig true' not in s:
+              if needle not in s:
+                  raise SystemExit('Could not find compileSdk declaration')
+              p.write_text(s.replace(needle, replacement, 1))
+          PY
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
